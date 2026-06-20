@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>待办事项</title>
+<style>
+/* ===== CSS Custom Properties ===== */
+:root {
+  --blue-50:  #EFF6FF;
+  --blue-100: #DBEAFE;
+  --blue-200: #BFDBFE;
+  --blue-400: #60A5FA;
+  --blue-500: #3B82F6;
+  --blue-600: #2563EB;
+  --blue-700: #1D4ED8;
+  --gray-50:  #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-300: #CBD5E1;
+  --gray-400: #94A3B8;
+  --gray-500: #64748B;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1E293B;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px 60px;
+  line-height: 1.5;
+}
+
+.app { width: 100%; max-width: 480px; }
+
+/* Header */
+.header { text-align: center; margin-bottom: 28px; }
+.header-accent { width: 40px; height: 4px; background: var(--blue-500); border-radius: 2px; margin: 0 auto 16px; }
+.header-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header-subtitle { font-size: 0.875rem; color: var(--gray-400); margin-top: 4px; }
+
+/* Input Card */
+.input-card {
+  background: #fff; border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: var(--shadow-md); margin-bottom: 16px; border: 1px solid var(--gray-100);
+}
+.input-row { display: flex; gap: 10px; align-items: center; }
+.task-input {
+  flex: 1; border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+  padding: 12px 16px; font-size: 0.938rem; font-family: var(--font-sans);
+  color: var(--gray-800); background: var(--gray-50); transition: all var(--transition); outline: none;
+}
+.task-input:focus { border-color: var(--blue-400); background: #fff; box-shadow: 0 0 0 3px var(--blue-100); }
+.task-input::placeholder { color: var(--gray-400); }
+.add-btn {
+  width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--blue-500);
+  color: #fff; border: none; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: all var(--transition); flex-shrink: 0;
+}
+.add-btn:hover { background: var(--blue-600); transform: scale(1.05); }
+.add-btn:active { transform: scale(0.95); }
+
+.input-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 12px; }
+.tag-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+  border-radius: 20px; border: 1.5px solid var(--gray-200); background: #fff;
+  font-size: 0.813rem; color: var(--gray-600); cursor: pointer; transition: all var(--transition);
+  font-family: var(--font-sans); white-space: nowrap;
+}
+.tag-chip:hover { border-color: var(--blue-200); background: var(--blue-50); }
+.tag-chip.selected { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-700); font-weight: 500; }
+.tag-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.tag-dot.study    { background: #6366F1; }
+.tag-dot.work     { background: #F59E0B; }
+.tag-dot.personal { background: #10B981; }
+
+.date-picker {
+  border: 1.5px solid var(--gray-200); border-radius: 20px; padding: 5px 12px;
+  font-size: 0.813rem; font-family: var(--font-sans); color: var(--gray-700);
+  background: #fff; outline: none; cursor: pointer; transition: all var(--transition); min-width: 0;
+}
+.date-picker:focus { border-color: var(--blue-400); box-shadow: 0 0 0 3px var(--blue-100); }
+
+/* Stats */
+.stats-bar {
+  display: flex; align-items: center; justify-content: center; background: #fff;
+  border-radius: var(--radius-lg); padding: 16px 20px; box-shadow: var(--shadow-sm);
+  margin-bottom: 12px; border: 1px solid var(--gray-100);
+}
+.stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.stat-number { font-size: 1.375rem; font-weight: 700; line-height: 1.2; }
+.stat-label { font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+.stat-divider { width: 1px; height: 28px; background: var(--gray-200); }
+
+/* Filters */
+.filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.filter-tab {
+  flex: 1; padding: 8px 0; border-radius: 20px; border: 1px solid var(--gray-200);
+  background: #fff; color: var(--gray-500); font-size: 0.813rem;
+  font-family: var(--font-sans); cursor: pointer; transition: all var(--transition); font-weight: 500;
+}
+.filter-tab:hover { color: var(--gray-700); border-color: var(--gray-300); }
+.filter-tab.active { background: var(--blue-500); color: #fff; border-color: var(--blue-500); }
+
+/* Task List */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-card {
+  background: #fff; border-radius: var(--radius-md); padding: 16px;
+  display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100); transition: all var(--transition);
+  animation: slideIn 300ms ease-out; cursor: default;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.task-card:hover { box-shadow: var(--shadow-md); border-color: var(--gray-200); }
+.task-card.completed { background: var(--gray-50); }
+.task-card.completed .task-title { text-decoration: line-through; color: var(--gray-400); }
+.task-card.removing { animation: slideOut 250ms ease-in forwards; }
+@keyframes slideOut { to { opacity: 0; transform: translateX(24px); } }
+
+/* Checkbox */
+.checkbox {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--gray-300);
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: all var(--transition);
+}
+.checkbox:hover { border-color: var(--blue-400); background: var(--blue-50); }
+.task-card.completed .checkbox { background: var(--blue-500); border-color: var(--blue-500); }
+.checkbox svg { opacity: 0; transform: scale(0.5); transition: all var(--transition); }
+.task-card.completed .checkbox svg { opacity: 1; transform: scale(1); }
+
+.task-content { flex: 1; min-width: 0; }
+.task-title { font-size: 0.938rem; font-weight: 500; word-break: break-word; transition: color var(--transition); }
+.task-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.task-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.task-tag.study    { background: #EEF2FF; color: #6366F1; }
+.task-tag.work     { background: #FFFBEB; color: #D97706; }
+.task-tag.personal { background: #ECFDF5; color: #059669; }
+.task-date { font-size: 0.75rem; color: var(--gray-400); }
+
+/* Delete */
+.delete-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent;
+  color: var(--gray-300); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: all var(--transition); flex-shrink: 0; opacity: 0;
+}
+.task-card:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { background: #FEE2E2; color: #EF4444; }
+
+/* Date headers */
+.date-header { display: flex; align-items: center; gap: 10px; padding: 8px 4px; margin-top: 8px; }
+.date-header:first-child { margin-top: 0; }
+.date-header-text { font-size: 0.813rem; font-weight: 600; color: var(--gray-500); white-space: nowrap; letter-spacing: 0.05em; }
+.date-header-line { flex: 1; height: 1px; background: var(--gray-200); }
+
+/* Empty */
+.empty-state { text-align: center; padding: 48px 20px; }
+.empty-icon { margin-bottom: 16px; opacity: 0.6; }
+.empty-title { font-size: 1rem; font-weight: 600; color: var(--gray-500); margin-bottom: 4px; }
+.empty-desc { font-size: 0.875rem; color: var(--gray-400); }
+.empty-state.hidden { display: none; }
+
+@media (max-width: 400px) {
+  body { padding: 24px 12px 40px; }
+  .header-title { font-size: 1.5rem; }
+  .input-card { padding: 16px; }
+  .input-meta { flex-direction: column; align-items: stretch; }
+  .tag-selector { justify-content: center; }
+  .date-picker { text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="header-accent"></div>
+    <h1 class="header-title">待办事项</h1>
+    <p class="header-subtitle">记录每一天，让生活井井有条</p>
+  </header>
+
+  <div class="input-card">
+    <div class="input-row">
+      <input type="text" id="taskInput" class="task-input" placeholder="添加新任务..." autocomplete="off">
+      <button id="addBtn" class="add-btn" title="添加任务">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-meta">
+      <div class="tag-selector">
+        <button class="tag-chip selected" data-tag="study"><span class="tag-dot study"></span>学习</button>
+        <button class="tag-chip" data-tag="work"><span class="tag-dot work"></span>工作</button>
+        <button class="tag-chip" data-tag="personal"><span class="tag-dot personal"></span>生活</button>
+      </div>
+      <input type="date" id="datePicker" class="date-picker">
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-number" id="statTotal">0</span><span class="stat-label">全部</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="stat-number" id="statActive">0</span><span class="stat-label">待完成</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="stat-number" id="statDone">0</span><span class="stat-label">已完成</span></div>
+  </div>
+
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" data-filter="all">全部</button>
+    <button class="filter-tab" data-filter="active">进行中</button>
+    <button class="filter-tab" data-filter="completed">已完成</button>
+  </div>
+
+  <div class="task-list" id="taskList">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#E2E8F0" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M24 32h16M32 24v16" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="empty-title">还没有任务</p>
+      <p class="empty-desc">添加你的第一个任务，开始高效的一天</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Sound Engine ===== */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playCompleteSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  const osc1 = audioCtx.createOscillator();
+  const gain1 = audioCtx.createGain();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(660, now);
+  osc1.frequency.linearRampToValueAtTime(880, now + 0.06);
+  gain1.gain.setValueAtTime(0, now);
+  gain1.gain.linearRampToValueAtTime(0.3, now + 0.04);
+  gain1.gain.linearRampToValueAtTime(0, now + 0.25);
+  osc1.connect(gain1); gain1.connect(audioCtx.destination);
+  osc1.start(now); osc1.stop(now + 0.25);
+
+  const osc2 = audioCtx.createOscillator();
+  const gain2 = audioCtx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(1320, now + 0.08);
+  gain2.gain.setValueAtTime(0, now + 0.08);
+  gain2.gain.linearRampToValueAtTime(0.25, now + 0.12);
+  gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+  osc2.connect(gain2); gain2.connect(audioCtx.destination);
+  osc2.start(now + 0.08); osc2.stop(now + 0.5);
+}
+
+/* ===== Data Store ===== */
+const STORAGE_KEY = 'todo_app_data';
+function loadTasks() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } }
+function saveTasks(tasks) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function formatDate(dateStr) {
+  const today = new Date();
+  const target = new Date(dateStr + 'T00:00:00');
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+  if (dateStr === today.toISOString().slice(0,10)) return '今天';
+  if (dateStr === yesterday.toISOString().slice(0,10)) return '昨天';
+  if (dateStr === tomorrow.toISOString().slice(0,10)) return '明天';
+  return `${target.getMonth()+1}月${target.getDate()}日 ${weekdays[target.getDay()]}`;
+}
+
+function formatDateShort(dateStr) {
+  const p = dateStr.split('-');
+  return `${parseInt(p[1])}/${parseInt(p[2])}`;
+}
+
+/* ===== State ===== */
+let tasks = loadTasks();
+let currentFilter = 'all';
+let selectedTag = 'study';
+
+const $taskInput  = document.getElementById('taskInput');
+const $addBtn     = document.getElementById('addBtn');
+const $datePicker = document.getElementById('datePicker');
+const $taskList   = document.getElementById('taskList');
+const $emptyState = document.getElementById('emptyState');
+const $filterTabs = document.getElementById('filterTabs');
+const $statTotal  = document.getElementById('statTotal');
+const $statActive = document.getElementById('statActive');
+const $statDone   = document.getElementById('statDone');
+const $tagChips   = document.querySelectorAll('.tag-chip');
+
+$datePicker.value = new Date().toISOString().slice(0, 10);
+
+/* ===== Render ===== */
+function render() {
+  let filtered = [...tasks];
+  if (currentFilter === 'active') filtered = filtered.filter(t => !t.completed);
+  else if (currentFilter === 'completed') filtered = filtered.filter(t => t.completed);
+
+  filtered.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return b.createdAt - a.createdAt;
+  });
+
+  if (filtered.length === 0) {
+    $taskList.innerHTML = '';
+    $taskList.appendChild($emptyState);
+    $emptyState.classList.remove('hidden');
+    const t = $emptyState.querySelector('.empty-title');
+    const d = $emptyState.querySelector('.empty-desc');
+    if (currentFilter === 'completed') { t.textContent = '还没有完成的任务'; d.textContent = '完成一个任务，它会出现在这里'; }
+    else if (currentFilter === 'active') { t.textContent = '太棒了！'; d.textContent = '所有任务都完成了'; }
+    else { t.textContent = '还没有任务'; d.textContent = '添加你的第一个任务，开始高效的一天'; }
+  } else {
+    $emptyState.classList.add('hidden');
+    if ($emptyState.parentNode === $taskList) $emptyState.remove();
+
+    const groups = new Map();
+    filtered.forEach(t => {
+      if (!groups.has(t.date)) groups.set(t.date, []);
+      groups.get(t.date).push(t);
+    });
+
+    let html = '';
+    groups.forEach((groupTasks, date) => {
+      html += `<div class="date-header"><span class="date-header-text">${formatDate(date)}</span><div class="date-header-line"></div></div>`;
+      groupTasks.forEach(t => {
+        const tagNames = { study:'学习', work:'工作', personal:'生活' };
+        const d = document.createElement('div'); d.textContent = t.title;
+        html += `
+          <div class="task-card ${t.completed?'completed':''}" data-id="${t.id}">
+            <div class="checkbox">
+              <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                <path d="M1 5l3 3 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-content">
+              <div class="task-title">${d.innerHTML}</div>
+              <div class="task-meta">
+                <span class="task-tag ${t.tag}">${tagNames[t.tag]||t.tag}</span>
+                <span class="task-date">${formatDateShort(t.date)}</span>
+              </div>
+            </div>
+            <button class="delete-btn" title="删除">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>`;
+      });
+    });
+
+    $taskList.innerHTML = html;
+    $taskList.querySelectorAll('.task-card').forEach(card => {
+      card.querySelector('.checkbox').addEventListener('click', e => { e.stopPropagation(); toggleTask(card.dataset.id); });
+      card.querySelector('.delete-btn').addEventListener('click', e => { e.stopPropagation(); deleteTask(card.dataset.id); });
+    });
+  }
+
+  $statTotal.textContent = tasks.length;
+  $statActive.textContent = tasks.filter(t => !t.completed).length;
+  $statDone.textContent = tasks.filter(t => t.completed).length;
+}
+
+/* ===== Actions ===== */
+function addTask() {
+  const title = $taskInput.value.trim();
+  if (!title) return;
+  tasks.unshift({
+    id: generateId(), title, tag: selectedTag, date: $datePicker.value,
+    completed: false, createdAt: Date.now()
+  });
+  saveTasks(tasks);
+  $taskInput.value = '';
+  $taskInput.focus();
+  render();
+}
+
+function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task.completed = !task.completed;
+  if (task.completed) playCompleteSound();
+  saveTasks(tasks);
+  render();
+}
+
+function deleteTask(id) {
+  const card = $taskList.querySelector(`[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('removing');
+    card.addEventListener('animationend', () => {
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks(tasks);
+      render();
+    }, { once: true });
+  } else {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks(tasks);
+    render();
+  }
+}
+
+/* ===== Event Listeners ===== */
+$addBtn.addEventListener('click', addTask);
+$taskInput.addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+$tagChips.forEach(chip => chip.addEventListener('click', () => {
+  $tagChips.forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  selectedTag = chip.dataset.tag;
+}));
+$filterTabs.addEventListener('click', e => {
+  const tab = e.target.closest('.filter-tab');
+  if (!tab) return;
+  $filterTabs.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentFilter = tab.dataset.filter;
+  render();
+});
+
+/* ===== Init ===== */
+render();
+$taskInput.focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待办事项</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-accent"></div>
+      <h1 class="header-title">待办事项</h1>
+      <p class="header-subtitle">记录每一天，让生活井井有条</p>
+    </header>
+
+    <!-- Input Card -->
+    <div class="input-card">
+      <div class="input-row">
+        <input
+          type="text"
+          id="taskInput"
+          class="task-input"
+          placeholder="添加新任务..."
+          autocomplete="off"
+        >
+        <button id="addBtn" class="add-btn" title="添加任务">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-meta">
+        <div class="tag-selector">
+          <button class="tag-chip selected" data-tag="study">
+            <span class="tag-dot study"></span>学习
+          </button>
+          <button class="tag-chip" data-tag="work">
+            <span class="tag-dot work"></span>工作
+          </button>
+          <button class="tag-chip" data-tag="personal">
+            <span class="tag-dot personal"></span>生活
+          </button>
+        </div>
+        <input type="date" id="datePicker" class="date-picker">
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">
+        <span class="stat-number" id="statTotal">0</span>
+        <span class="stat-label">全部</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-number" id="statActive">0</span>
+        <span class="stat-label">待完成</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-number" id="statDone">0</span>
+        <span class="stat-label">已完成</span>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all">全部</button>
+      <button class="filter-tab" data-filter="active">进行中</button>
+      <button class="filter-tab" data-filter="completed">已完成</button>
+    </div>
+
+    <!-- Task List -->
+    <div class="task-list" id="taskList">
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#E2E8F0" stroke-width="2" stroke-dasharray="4 4"/>
+            <path d="M24 32h16M32 24v16" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="empty-title">还没有任务</p>
+        <p class="empty-desc">添加你的第一个任务，开始高效的一天</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

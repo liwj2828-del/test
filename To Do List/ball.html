@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  width:100%;height:100%;
+  background:transparent;
+  overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  user-select:none;-webkit-user-select:none;
+}
+.ball{
+  width:56px;height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#3B82F6 0%,#2563EB 100%);
+  box-shadow:0 3px 12px rgba(37,99,235,0.5),inset 0 1px 0 rgba(255,255,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 150ms ease,box-shadow 150ms ease;
+  cursor:grab;
+  position:relative;
+}
+.ball:active{cursor:grabbing;}
+.ball:hover{
+  transform:scale(1.08);
+  box-shadow:0 5px 20px rgba(37,99,235,0.65),inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.ball-icon{color:#fff;pointer-events:none;}
+/* ── Badge ── */
+.badge{
+  position:absolute;
+  top:-4px;right:-4px;
+  min-width:16px;height:16px;
+  border-radius:8px;
+  background:#EF4444;
+  color:#fff;
+  font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;
+  box-shadow:0 1.5px 4px rgba(239,68,68,0.55);
+  opacity:0;transform:scale(0.4);
+  transition:all 180ms cubic-bezier(0.4,0,0.2,1);
+  pointer-events:none;
+  line-height:1;
+}
+.badge.visible{opacity:1;transform:scale(1);}
+</style>
+</head>
+<body>
+<div class="ball" id="ball">
+  <svg class="ball-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 11 12 14 22 4"></polyline>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+  </svg>
+  <span class="badge" id="badge">0</span>
+</div>
+
+<script>
+const api = window.pywebview ? window.pywebview.api : null;
+const ball = document.getElementById('ball');
+const badge = document.getElementById('badge');
+
+/* ── Badge ── */
+function setBadgeCount(count) {
+  const n = Math.max(0, parseInt(count) || 0);
+  const text = n > 99 ? '99+' : String(n);
+  badge.textContent = text;
+  if (n > 0) badge.classList.add('visible');
+  else badge.classList.remove('visible');
+}
+
+/* ── Custom Drag ── */
+let dragging = false;
+let dragStartX = 0, dragStartY = 0;
+let winStartX = 0, winStartY = 0;
+
+ball.addEventListener('mousedown', (e) => {
+  dragging = true;
+  dragStartX = e.screenX;
+  dragStartY = e.screenY;
+  // Cancel any pending hover expand
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!dragging || !api) return;
+  const dx = e.screenX - dragStartX;
+  const dy = e.screenY - dragStartY;
+  // Move is relative — we use screen coords and let Python handle it
+  api.move_ball(e.screenX - 28, e.screenY - 28).catch(() => {});
+  dragStartX = e.screenX;
+  dragStartY = e.screenY;
+});
+
+document.addEventListener('mouseup', () => {
+  if (dragging) {
+    dragging = false;
+    // On release after drag, check if still hovering for expand
+    checkHover();
+  }
+});
+
+/* ── Hover to expand (with delay, cancelled during drag) ── */
+let hoverTimer = null;
+const HOVER_DELAY = 350;
+
+ball.addEventListener('mouseenter', () => {
+  if (dragging) return;
+  hoverTimer = setTimeout(() => {
+    hoverTimer = null;
+    if (api && !dragging) api.expand().catch(() => {});
+  }, HOVER_DELAY);
+});
+
+ball.addEventListener('mouseleave', () => {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+});
+
+function checkHover() {
+  // Re-check hover after drag release
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+  hoverTimer = setTimeout(() => {
+    hoverTimer = null;
+    if (api && !dragging) api.expand().catch(() => {});
+  }, HOVER_DELAY);
+}
+
+/* ── Init ── */
+if (api) {
+  api.get_badge_count().then(count => setBadgeCount(count)).catch(() => {});
+}
+</script>
+</body>
+</html>
