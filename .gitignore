@@ -20,3 +20,5 @@ Thumbs.db
 
 # Logs
 *.log
+# Ignore nested .git folder
+hello world端口展示/.git/
